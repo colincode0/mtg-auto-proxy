@@ -15,32 +15,39 @@ cards = [
     },
     # ... other cards
 ]
-
 def replace_symbols_with_images(template, draw, text, start_x, start_y, font):
     pattern = re.compile(r'\{[0-9XGURWB]+\}')
-    current_position = start_x, start_y
+    lines = text.split('\n')
+    current_y = start_y
 
-    for line in text.split('\n'):
-        offset = 0
-        for match in pattern.finditer(line):
-            part = line[offset:match.start()]
-            # Draw the text part
-            draw.text(current_position, part, font=font, fill=(0, 0, 0))
-            bbox = font.getbbox(part)  # Using getbbox instead of getsize
-            current_position = (current_position[0] + bbox[2], current_position[1])
+    for line in lines:
+        words = re.split(r'(\{[0-9XGURWB]+\})', line)  # Split by symbols only
+        current_x = start_x
+        for word in words:
+            if word == "":
+                continue
 
-            # Draw the symbol image
-            symbol = match.group()
-            symbol_image = Image.open(f'assets/mana/{symbol[1:-1]}.png')
-            template.paste(symbol_image, (current_position[0], current_position[1] - symbol_image.height // 2 + bbox[3] // 2), symbol_image)
-            current_position = (current_position[0] + symbol_image.width, current_position[1])
+            # If the word is a symbol, paste the symbol image
+            if pattern.fullmatch(word):
+                symbol = word.strip('{}')
+                symbol_image = Image.open(f'assets/manaSmall/{symbol}.png')
+                if symbol_image.mode != 'RGBA':
+                    symbol_image = symbol_image.convert('RGBA')
+                template.paste(symbol_image, (current_x, current_y), symbol_image)
+                current_x += symbol_image.size[0]
+            else:  # If the word is a text
+                # Add spaces back except for the first word in a line
+                if current_x > start_x:
+                    word = " " + word
+                word_width, word_height = draw.textsize(word, font=font)
+                if current_x + word_width > template.size[0]:  # New line if text overflows
+                    current_y += word_height + 5  # Adjust line spacing if needed
+                    current_x = start_x
+                draw.text((current_x, current_y), word, font=font, fill=(0, 0, 0))
+                current_x += word_width
 
-            offset = match.end()
-
-        remaining_text = line[offset:]
-        draw.text(current_position, remaining_text, font=font, fill=(0, 0, 0))
-        bbox = font.getbbox(remaining_text)
-        current_position = (start_x, current_position[1] + bbox[3])
+        # Increment y-coordinate for the next line
+        current_y += font.getsize('Ay')[1] + 5  # Adjust line spacing if needed
 
 
 def create_card(card):
@@ -76,13 +83,13 @@ def create_card(card):
     text_y = 50  # 60 pixels from the top
     draw.text((text_x, text_y), card["card_name"], (0, 0, 0), font=font)  # Black text
 
- # Add card text with symbols
+    # Add card text with symbols
     draw = ImageDraw.Draw(template)
-    font_text = ImageFont.truetype("assets/fonts/Cheboyga.ttf", 17)
+    font_text = ImageFont.truetype("assets/fonts/Cheboyga.ttf", 22)
     text_x = 111
     text_y = 650
-    wrapped_text = textwrap.fill(card["text"], width=40)
-    replace_symbols_with_images(template, draw, wrapped_text, text_x, text_y, font_text)
+   
+    replace_symbols_with_images(template, draw, card["text"], text_x, text_y, font_text)
 
     # # Text wrapping (if necessary)
     # wrapped_text = textwrap.fill(card["text"], width=40)  # Adjust 'width' as needed for your card
