@@ -2,9 +2,23 @@ import re
 from PIL import Image, ImageDraw, ImageFont
 import textwrap
 import json
-
+import requests
 
 # https://api.scryfall.com/cards/cmm/742
+
+def fetch_card_data():
+    url = 'https://api.scryfall.com/cards/cmm/742'
+    response = requests.get(url)
+    if response.status_code == 200:
+        return response.json()
+    else:
+        print(f"Failed to fetch card data: {response.status_code}")
+        return None
+
+# Fetch the card data and print it
+card_data = fetch_card_data()
+if card_data:
+    print(json.dumps(card_data, indent=4))
 
 cards = [
     {
