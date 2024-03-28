@@ -24,35 +24,23 @@ def fetch_card_data(url):
         print(f"Failed to fetch card data: {response.status_code}")
         return None
 
-
 def create_card_data_from_api(api_data):
-    return {
-        "template": api_data["colors"][0].lower(),  # Assuming single-color cards and lower case for template filename
+    card_data = {
+        "template": api_data["colors"][0].lower() if api_data["colors"] else "colorless",  # Handle cards without colors
         "mana_cost": api_data["mana_cost"],
         "card_name": api_data["name"],
         "type_line": api_data["type_line"],
         "text": api_data["oracle_text"],
-        "output_path": "output_card.png",  # Define your desired output file name
-        "power": api_data["power"],
-        "toughness": api_data["toughness"]
+        "output_path": "output_card.png"  # Define your desired output file name
     }
-# if card_data:
-#     print(json.dumps(card_data, indent=4))
 
-# cards = [
-#     {
-#         "template": "green",
-#         "mana1_path": "mtg/1.png",
-#         "mana2_path": "mtg/G.png",
-#         "mana_cost" : "{1}{G}{G}",
-#         "card_name": "Nyxborn Behemoth",
-#         "type_line": "Enchantment Creature — Beast",
-#         "text": "This spell costs {X} less to cast, where X is the total mana value of noncreature enchantments you control.\nTrample\n{1}{G}, Sacrifice another enchantment: Nyxborn Behemoth gains indestructible until end of turn.",
-#         "output_path": "output_card1.png",
-#         "power": "10",
-#         "toughness": "10"
-#     },
-# ]
+    # Add power and toughness only if they are present
+    if 'power' in api_data and 'toughness' in api_data:
+        card_data["power"] = api_data["power"]
+        card_data["toughness"] = api_data["toughness"]
+
+    return card_data
+
 def replace_symbols_with_images(template, draw, text, start_x, start_y, font, max_width):
     pattern = re.compile(r'\{[0-9XGURWB]+\}')
     lines = text.split('\n')
@@ -128,16 +116,20 @@ def create_card(card):
     
     mana_cost_end_x = parse_mana_cost(draw, card["mana_cost"], template, template.width - 181, 50, font_text)
     
-    pt_text = f"{card['power']}/{card['toughness']}"
-    pt_position = (template.width - draw.textbbox((0, 0), pt_text, font=font_pt)[2] - 66, template.height - 73)
-    render_text_with_stroke(draw, pt_text, pt_position, font_pt )
+ # Render power/toughness if present
+    if 'power' in card and 'toughness' in card:
+        font_pt = create_font(font_path, 44)
+        pt_text = f"{card['power']}/{card['toughness']}"
+        pt_position = (template.width - draw.textbbox((0, 0), pt_text, font=font_pt)[2] - 72, template.height - 107)
+        render_text_with_stroke(draw, pt_text, pt_position, font_pt, fill=(255, 255, 255), stroke_fill=(0, 0, 0), stroke_width=2)
 
-    replace_symbols_with_images(template, draw, card["text"], 111, 650, font_text, 656)
+
+    replace_symbols_with_images(template, draw, card["text"], 99, 646, font_text, 656)
     
     template.save(card["output_path"], format='PNG')
 
 if __name__ == "__main__":
-    card_api_url = "https://api.scryfall.com/cards/cmm/865"
+    card_api_url = "https://api.scryfall.com/cards/cmm/828"
     card_api_data = fetch_card_data(card_api_url)
 
     if card_api_data:
