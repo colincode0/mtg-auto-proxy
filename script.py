@@ -1,6 +1,8 @@
 import re
 from PIL import Image, ImageDraw, ImageFont
 import textwrap
+import json
+
 
 # https://api.scryfall.com/cards/cmm/742
 
@@ -17,7 +19,6 @@ cards = [
         "power": "10",
         "toughness": "10"
     },
-    # ... other cards
 ]
 def replace_symbols_with_images(template, draw, text, start_x, start_y, font, max_width):
     pattern = re.compile(r'\{[0-9XGURWB]+\}')
@@ -31,95 +32,64 @@ def replace_symbols_with_images(template, draw, text, start_x, start_y, font, ma
                 continue
             if pattern.fullmatch(word):  # Symbol
                 symbol = word.strip('{}')
-                symbol_image = Image.open(f'assets/manaSmall/{symbol}.png').convert('RGBA')
-                if current_x + symbol_image.width > max_width:  # Check if symbol overflows max width
-                    current_y += draw.textbbox((0, 0), 'Ay', font=font)[3] + 10  # Add line height
-                    current_x = start_x  # Reset to start_x
-                template.paste(symbol_image, (current_x, current_y), symbol_image)
-                current_x += symbol_image.width
+                symbol_image_path = f'assets/manaSmall/{symbol}.png'
+                with Image.open(symbol_image_path) as symbol_image:
+                    template.paste(symbol_image.convert('RGBA'), (current_x, current_y), symbol_image)
+                    current_x += symbol_image.width
             else:  # Regular text
                 # Add space if it's not the first word/symbol on the line
                 if current_x > start_x:
                     word = ' ' + word
+                word_bbox = draw.textbbox((0, 0), word, font=font)
+                word_width = word_bbox[2] - word_bbox[0]
                 # Check if word overflows max width
-                if current_x + draw.textbbox((0, 0), word, font=font)[2] > max_width:
-                    current_y += draw.textbbox((0, 0), 'Ay', font=font)[3] + 10  # Add line height
+                if current_x + word_width > max_width:
+                    current_y += word_bbox[3] + 10  # Adjust line spacing
                     current_x = start_x  # Reset to start_x
-                draw.text((current_x, current_y), word, font=font, fill=(0, 0, 0))
-                current_x += draw.textbbox((0, 0), word, font=font)[2]
+                draw.text((current_x, current_y), word, (0, 0, 0), font=font)
+                current_x += word_width
         current_y += draw.textbbox((0, 0), 'Ay', font=font)[3] + 10  # Move to next line after each line
 
-def parse_mana_cost(mana_cost, template, start_x, start_y):
-    # Use regex to find all instances of mana symbols
+
+
+def create_font(font_path, size):
+    return ImageFont.truetype(font_path, size)
+
+def render_text(draw, text, position, font, fill=(0, 0, 0)):
+    draw.text(position, text, fill, font=font)
+
+def parse_mana_cost(draw, mana_cost, template, start_x, start_y, font):
     mana_symbols = re.findall(r'\{[0-9XGURWB]+\}', mana_cost)
     current_x = start_x
     for symbol in mana_symbols:
-        # Strip the curly braces and construct the image path
         symbol = symbol.strip('{}')
-        symbol_image = Image.open(f'assets/mana/{symbol}.png').convert('RGBA')
-        # Paste the symbol image onto the template
-        template.paste(symbol_image, (current_x, start_y), symbol_image)
-        # Update x position for next symbol
-        current_x += symbol_image.size[0] + 5  # Add a small margin
+        symbol_image_path = f'assets/mana/{symbol}.png'
+        with Image.open(symbol_image_path) as symbol_image:
+            template.paste(symbol_image.convert('RGBA'), (current_x, start_y), symbol_image)
+            current_x += symbol_image.size[0] + 5
     return current_x
 
-
 def create_card(card):
-    # Load the main card template
-    template_files = {
-        # ... other template files
-        "green": "assets/templates/green_temp.png",
-        # ... other template files
-    }
-    template = Image.open(template_files[card["template"]])
-
-    # Create a drawing context for the template
+    template = Image.open(f"assets/templates/{card['template']}_temp.png")
     draw = ImageDraw.Draw(template)
-
-    # Define the font for the card text
+    
     font_path = "assets/fonts/Cheboyga.ttf"
-    font_size_text = 22
-    font_text = ImageFont.truetype(font_path, font_size_text)
-
-    # Render the mana cost at the top-right corner
-    mana_cost_start_x = template.width - 181  # Adjust based on your template
-    mana_cost_start_y = 50  # Adjust based on your template
-    current_x = parse_mana_cost(card["mana_cost"], template, mana_cost_start_x, mana_cost_start_y)
-
-    # Render the type line
-    type_line_x = 77  # Adjust based on your template
-    type_line_y = 585  # Adjust based on your template
-    draw.text((type_line_x, type_line_y), card["type_line"], (0, 0, 0), font=font_text)
-
-    # Define font for power/toughness
-    font_pt = ImageFont.truetype(font_path, font_size_text)  # Assuming same size as card text for now
-
-    # Calculate position for power/toughness text
+    font_text = create_font(font_path, 22)
+    font_name = create_font(font_path, 33)
+    font_pt = create_font(font_path, 44)
+    
+    render_text(draw, card["card_name"], (60, 50), font_name)
+    render_text(draw, card["type_line"], (77, 585), font_text)
+    
+    mana_cost_end_x = parse_mana_cost(draw, card["mana_cost"], template, template.width - 181, 50, font_text)
+    
     pt_text = f"{card['power']}/{card['toughness']}"
-    pt_width, pt_height = draw.textsize(pt_text, font=font_pt)
-    pt_x = template.width - pt_width - 30  # 30 pixels padding from the right edge
-    pt_y = template.height - pt_height - 30  # 30 pixels padding from the bottom edge
-
-    # Render power/toughness text
-    draw.text((pt_x, pt_y), pt_text, (255, 255, 255), font=font_pt)  # White text for visibility
-
-
-    # Add card name
-    font_size_name = 33
-    font_name = ImageFont.truetype(font_path, font_size_name)
-    text_x = 60  # Adjust as needed
-    text_y = 50  # Adjust as needed
-    draw.text((text_x, text_y), card["card_name"], (0, 0, 0), font=font_name)
-
-    # Add card text with symbols
-    text_x = 111
-    text_y = 650
-    max_text_width = 656  # Adjust this value based on your card's actual template size
-    replace_symbols_with_images(template, draw, card["text"], text_x, text_y, font_text, max_text_width)
-
-    # Save the result
+    pt_position = (template.width - draw.textbbox((0, 0), pt_text, font=font_pt)[2] - 66, template.height - 73)
+    render_text(draw, pt_text, pt_position, font_pt, fill=(255, 255, 255))
+    
+    replace_symbols_with_images(template, draw, card["text"], 111, 650, font_text, 656)
+    
     template.save(card["output_path"], format='PNG')
 
-# Use the function
 for card_obj in cards:
     create_card(card_obj)
