@@ -112,7 +112,7 @@ def create_card(card):
     # Load and resize the art image
     art_image = Image.open("assets/art/art.jpg")  # Replace with your art path
     art_box_position = (50, 50)  # The position where the art box starts on the template
-    art_box_size = (300, 300)  # The size of the art box on the template
+    art_box_size = (646, 646)  # The size of the art box on the template
 
     # Ensure the art image has an alpha channel and resize/crop if necessary
     art_image = ImageOps.contain(art_image, art_box_size)
@@ -120,7 +120,7 @@ def create_card(card):
         art_image = art_image.convert('RGBA')
 
     # Paste the art onto the background image at the specified position
-    template.paste(art_image, art_box_position, art_image)
+    template.paste(art_image, art_box_position, art_image.split()[3])
 
     # Now paste the template on top of the background (this will show the art through the transparent area)
     template.paste(template_with_transparency, (0, 0), template_with_transparency)
