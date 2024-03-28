@@ -84,12 +84,23 @@ def replace_symbols_with_images(template, draw, text, start_x, start_y, font, ma
         current_y += draw.textbbox((0, 0), 'Ay', font=font)[3] + 10  # Move to next line after each line
 
 
+def render_text_with_stroke(draw, text, position, font, fill=(255, 255, 255), stroke_fill=(0, 0, 0), stroke_width=2):
+    x, y = position
+    # Draw stroke
+    for adj in range(-stroke_width, stroke_width+1):
+        for adjy in range(-stroke_width, stroke_width+1):
+            draw.text((x + adj, y + adjy), text, font=font, fill=stroke_fill)
+    # Draw main text
+    draw.text((x, y), text, font=font, fill=fill)
+
 
 def create_font(font_path, size):
     return ImageFont.truetype(font_path, size)
 
 def render_text(draw, text, position, font, fill=(0, 0, 0)):
     draw.text(position, text, fill, font=font)
+
+
 
 def parse_mana_cost(draw, mana_cost, template, start_x, start_y, font):
     mana_symbols = re.findall(r'\{[0-9XGURWB]+\}', mana_cost)
@@ -112,21 +123,21 @@ def create_card(card):
     font_name = create_font(font_path, 33)
     font_pt = create_font(font_path, 44)
     
-    render_text(draw, card["card_name"], (60, 50), font_name)
-    render_text(draw, card["type_line"], (77, 585), font_text)
+    render_text_with_stroke(draw, card["card_name"], (60, 50), font_name)
+    render_text_with_stroke(draw, card["type_line"], (77, 585), font_text)
     
     mana_cost_end_x = parse_mana_cost(draw, card["mana_cost"], template, template.width - 181, 50, font_text)
     
     pt_text = f"{card['power']}/{card['toughness']}"
     pt_position = (template.width - draw.textbbox((0, 0), pt_text, font=font_pt)[2] - 66, template.height - 73)
-    render_text(draw, pt_text, pt_position, font_pt, fill=(255, 255, 255))
-    
+    render_text_with_stroke(draw, pt_text, pt_position, font_pt )
+
     replace_symbols_with_images(template, draw, card["text"], 111, 650, font_text, 656)
     
     template.save(card["output_path"], format='PNG')
 
 if __name__ == "__main__":
-    card_api_url = "https://api.scryfall.com/cards/cmm/742"
+    card_api_url = "https://api.scryfall.com/cards/cmm/865"
     card_api_data = fetch_card_data(card_api_url)
 
     if card_api_data:
