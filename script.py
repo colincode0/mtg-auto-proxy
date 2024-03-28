@@ -5,9 +5,9 @@ import json
 import requests
 
 # https://api.scryfall.com/cards/cmm/742
+# url = 'https://api.scryfall.com/cards/cmm/742'
 
-def fetch_card_data():
-    url = 'https://api.scryfall.com/cards/cmm/742'
+def fetch_card_data(url):
     response = requests.get(url)
     if response.status_code == 200:
         return response.json()
@@ -15,25 +15,44 @@ def fetch_card_data():
         print(f"Failed to fetch card data: {response.status_code}")
         return None
 
-# Fetch the card data and print it
-card_data = fetch_card_data()
-if card_data:
-    print(json.dumps(card_data, indent=4))
+# Function to fetch card data from the API
+def fetch_card_data(url):
+    response = requests.get(url)
+    if response.status_code == 200:
+        return response.json()
+    else:
+        print(f"Failed to fetch card data: {response.status_code}")
+        return None
 
-cards = [
-    {
-        "template": "green",
-        "mana1_path": "mtg/1.png",
-        "mana2_path": "mtg/G.png",
-        "mana_cost" : "{1}{G}{G}",
-        "card_name": "Nyxborn Behemoth",
-        "type_line": "Enchantment Creature — Beast",
-        "text": "This spell costs {X} less to cast, where X is the total mana value of noncreature enchantments you control.\nTrample\n{1}{G}, Sacrifice another enchantment: Nyxborn Behemoth gains indestructible until end of turn.",
-        "output_path": "output_card1.png",
-        "power": "10",
-        "toughness": "10"
-    },
-]
+
+def create_card_data_from_api(api_data):
+    return {
+        "template": api_data["colors"][0].lower(),  # Assuming single-color cards and lower case for template filename
+        "mana_cost": api_data["mana_cost"],
+        "card_name": api_data["name"],
+        "type_line": api_data["type_line"],
+        "text": api_data["oracle_text"],
+        "output_path": "output_card.png",  # Define your desired output file name
+        "power": api_data["power"],
+        "toughness": api_data["toughness"]
+    }
+# if card_data:
+#     print(json.dumps(card_data, indent=4))
+
+# cards = [
+#     {
+#         "template": "green",
+#         "mana1_path": "mtg/1.png",
+#         "mana2_path": "mtg/G.png",
+#         "mana_cost" : "{1}{G}{G}",
+#         "card_name": "Nyxborn Behemoth",
+#         "type_line": "Enchantment Creature — Beast",
+#         "text": "This spell costs {X} less to cast, where X is the total mana value of noncreature enchantments you control.\nTrample\n{1}{G}, Sacrifice another enchantment: Nyxborn Behemoth gains indestructible until end of turn.",
+#         "output_path": "output_card1.png",
+#         "power": "10",
+#         "toughness": "10"
+#     },
+# ]
 def replace_symbols_with_images(template, draw, text, start_x, start_y, font, max_width):
     pattern = re.compile(r'\{[0-9XGURWB]+\}')
     lines = text.split('\n')
@@ -85,6 +104,7 @@ def parse_mana_cost(draw, mana_cost, template, start_x, start_y, font):
 
 def create_card(card):
     template = Image.open(f"assets/templates/{card['template']}_temp.png")
+    # template = Image.open(f"assets/templates/white_temp.png")
     draw = ImageDraw.Draw(template)
     
     font_path = "assets/fonts/Cheboyga.ttf"
@@ -105,5 +125,10 @@ def create_card(card):
     
     template.save(card["output_path"], format='PNG')
 
-for card_obj in cards:
-    create_card(card_obj)
+if __name__ == "__main__":
+    card_api_url = "https://api.scryfall.com/cards/cmm/742"
+    card_api_data = fetch_card_data(card_api_url)
+
+    if card_api_data:
+        card_details = create_card_data_from_api(card_api_data)
+        create_card(card_details)
