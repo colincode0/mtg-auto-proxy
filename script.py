@@ -42,12 +42,12 @@ def create_card_data_from_api(api_data):
     return card_data
 
 def replace_symbols_with_images(template, draw, text, start_x, start_y, font, max_width):
-    pattern = re.compile(r'\{[0-9XGURWB]+\}')
+    pattern = re.compile(r'\{[0-9XGURWBTC]+\}')
     lines = text.split('\n')
     current_y = start_y
     for line in lines:
         current_x = start_x
-        line_words = re.split(r'(\s+|\{[0-9XGURWB]+\})', line)  # Split by whitespace and symbols
+        line_words = re.split(r'(\s+|\{[0-9XGURWBTC]+\})', line)  # Split by whitespace and symbols
         for word in line_words:
             if word.isspace() or word == "":
                 continue
@@ -160,7 +160,7 @@ def create_card(card):
     template.save(card["output_path"], format='PNG')
 
 if __name__ == "__main__":
-    card_api_url = "https://api.scryfall.com/cards/jou/152"
+    card_api_url = "https://api.scryfall.com/cards/uds/135"
     card_api_data = fetch_card_data(card_api_url)
 
     if card_api_data:
