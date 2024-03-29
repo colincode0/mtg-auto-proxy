@@ -138,7 +138,7 @@ def create_card(card):
     draw = ImageDraw.Draw(template)
     
     font_path = "assets/fonts/Cheboyga.ttf"
-    font_text = create_font(font_path, 24)
+    font_text = create_font(font_path, 23)
     font_name = create_font(font_path, 33)
     font_pt = create_font(font_path, 44)
     
@@ -160,7 +160,7 @@ def create_card(card):
     template.save(card["output_path"], format='PNG')
 
 if __name__ == "__main__":
-    card_api_url = "https://api.scryfall.com/cards/dmr/294"
+    card_api_url = "https://api.scryfall.com/cards/cmm/730"
     card_api_data = fetch_card_data(card_api_url)
 
     if card_api_data:
