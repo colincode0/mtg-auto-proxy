@@ -4,9 +4,6 @@ import textwrap
 import json
 import requests
 
-# https://api.scryfall.com/cards/cmm/742
-# url = 'https://api.scryfall.com/cards/cmm/742'
-
 def fetch_card_data(url):
     response = requests.get(url)
     if response.status_code == 200:
@@ -102,39 +99,8 @@ def parse_mana_cost(draw, mana_cost, template, start_x, start_y, font):
     return current_x
 
 
-    # FOR ART?
-    # # Load the template where the art space is transparent
-    # template_image_path = f"assets/templates/{card['template']}_temp.png"
-    # template_with_transparency = Image.open(template_image_path).convert("RGBA")
-
-    # # Create an empty image for the background
-    # template = Image.new("RGBA", template_with_transparency.size)
-
-    # # Load and resize the art image
-    # art_image = Image.open("assets/art/art3.png")  # Replace with your art path
-    # art_box_position = (50, 50)  # The position where the art box starts on the template
-    # art_box_size = (646, 646)  # The size of the art box on the template
-
-    # # Ensure the art image has an alpha channel and resize/crop if necessary
-    # art_image = ImageOps.contain(art_image, art_box_size)
-    # if art_image.mode != 'RGBA':
-    #     art_image = art_image.convert('RGBA')
-
-    # # Paste the art onto the background image at the specified position
-    # template.paste(art_image, art_box_position, art_image.split()[3])
-
-    # # Now paste the template on top of the background (this will show the art through the transparent area)
-    # template.paste(template_with_transparency, (0, 0), template_with_transparency)
-
-    # # Create a drawing context
-    # draw = ImageDraw.Draw(template)
-    
-
-
-
 def create_card(card):
     template = Image.open(f"assets/templates/{card['template']}_temp.png")
-    # template = Image.open(f"assets/templates/white_temp.png")
     draw = ImageDraw.Draw(template)
     
     font_path = "assets/fonts/Cheboyga.ttf"
@@ -160,7 +126,7 @@ def create_card(card):
     template.save(card["output_path"], format='PNG')
 
 if __name__ == "__main__":
-    card_api_url = "https://api.scryfall.com/cards/cmm/730"
+    card_api_url = "https://api.scryfall.com/cards/dmr/288"
     card_api_data = fetch_card_data(card_api_url)
 
     if card_api_data:
