@@ -38,7 +38,7 @@ def create_card_data_from_api(api_data):
 
     return card_data
 
-def replace_symbols_with_images(template, draw, text, start_x, start_y, font, max_width, stroke_width=2):
+def replace_symbols_with_images(template, draw, text, start_x, start_y, font, max_width):
     pattern = re.compile(r'\{[0-9XGURWBTC]+\}')
     lines = text.split('\n')
     current_y = start_y
@@ -55,16 +55,18 @@ def replace_symbols_with_images(template, draw, text, start_x, start_y, font, ma
                     template.paste(symbol_image.convert('RGBA'), (current_x, current_y), symbol_image)
                     current_x += symbol_image.width
             else:  # Regular text
+                # Add space if it's not the first word/symbol on the line
                 if current_x > start_x:
                     word = ' ' + word
                 word_bbox = draw.textbbox((0, 0), word, font=font)
                 word_width = word_bbox[2] - word_bbox[0]
+                # Check if word overflows max width
                 if current_x + word_width > max_width:
-                    current_y += word_bbox[3] + 10
-                    current_x = start_x
-                render_text_with_stroke(draw, word, (current_x, current_y), font, fill=(0, 0, 0), stroke_fill=(255, 255, 255), stroke_width=stroke_width)
+                    current_y += word_bbox[3] + 10  # Adjust line spacing
+                    current_x = start_x  # Reset to start_x
+                draw.text((current_x, current_y), word, (0, 0, 0), font=font)
                 current_x += word_width
-        current_y += draw.textbbox((0, 0), 'Ay', font=font)[3] + 10
+        current_y += draw.textbbox((0, 0), 'Ay', font=font)[3] + 10  # Move to next line after each line
 
 
 def render_text_with_stroke(draw, text, position, font, fill=(255, 255, 255), stroke_fill=(0, 0, 0), stroke_width=2):
@@ -72,11 +74,9 @@ def render_text_with_stroke(draw, text, position, font, fill=(255, 255, 255), st
     # Draw stroke
     for adj in range(-stroke_width, stroke_width+1):
         for adjy in range(-stroke_width, stroke_width+1):
-            if adj != 0 or adjy != 0:
-                draw.text((x + adj, y + adjy), text, font=font, fill=stroke_fill)
+            draw.text((x + adj, y + adjy), text, font=font, fill=stroke_fill)
     # Draw main text
     draw.text((x, y), text, font=font, fill=fill)
-
 
 
 def create_font(font_path, size):
