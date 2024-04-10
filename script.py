@@ -126,7 +126,7 @@ def create_card(card):
     template.save(card["output_path"], format='PNG')
 
 if __name__ == "__main__":
-    card_api_url = "https://api.scryfall.com/cards/mul/30"
+    card_api_url = "https://api.scryfall.com/cards/mul/33"
     card_api_data = fetch_card_data(card_api_url)
 
     if card_api_data:
